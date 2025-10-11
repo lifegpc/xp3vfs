@@ -68,7 +68,6 @@ public:
         return pos >= entry.original_size;
     }
     virtual bool close() {
-        stream->close();
         if (cache) {
             cache->close();
             delete cache;
