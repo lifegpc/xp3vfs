@@ -15,17 +15,21 @@ if get_option('wrap')
     zlib = subproject('zlib', required: true)
     zlib_dep = zlib.get_variable('zlib_dep')
     deps += zlib_dep
-    zstd = subproject('zstd', required: true)
-    zstd_dep = zstd.get_variable('libzstd_dep')
-    deps += zstd_dep
-    conf.set('HAVE_ZSTD', 1)
+    if get_option('zstd')
+        zstd = subproject('zstd', required: true)
+        zstd_dep = zstd.get_variable('libzstd_dep')
+        deps += zstd_dep
+        conf.set('HAVE_ZSTD', 1)
+    endif
 else
     zlib_dep = dependency('zlib', required: true, version: '>=1.1.2')
     deps += zlib_dep
-    zstd_dep = dependency('libzstd', required: false, version: '>=1.4.4')
-    if zstd_dep.found()
-        deps += zstd_dep
-        conf.set('HAVE_ZSTD', 1)
+    if get_option('zstd')
+        zstd_dep = dependency('libzstd', required: false, version: '>=1.4.4')
+        if zstd_dep.found()
+            deps += zstd_dep
+            conf.set('HAVE_ZSTD', 1)
+        endif
     endif
 endif
 
