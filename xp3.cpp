@@ -6,33 +6,33 @@
 
 bool Xp3Archive::ReadIndex() {
     uint8_t magic[11];
-    if (!stream.readall(magic)) {
+    if (!stream->readall(magic)) {
         return false;
     }
     if (memcmp(magic, XP3_MAGIC, 11) != 0) {
         return false;
     }
     uint64_t index_offset;
-    if (!stream.readu64(index_offset)) {
+    if (!stream->readu64(index_offset)) {
         return false;
     }
-    if (!stream.seek(index_offset, SEEK_SET)) {
+    if (!stream->seek(index_offset, SEEK_SET)) {
         return false;
     }
     std::vector<uint8_t> index;
     uint8_t index_encode_method;
-    if (!stream.readu8(index_encode_method)) {
+    if (!stream->readu8(index_encode_method)) {
         return false;
     }
     switch (index_encode_method) {
     case TVP_XP3_INDEX_ENCODE_RAW:
     {
         uint64_t index_size;
-        if (!stream.readu64(index_size)) {
+        if (!stream->readu64(index_size)) {
             return false;
         }
         index.resize(index_size);
-        if (!stream.readall(index)) {
+        if (!stream->readall(index)) {
             return false;
         }
         break;
@@ -40,18 +40,18 @@ bool Xp3Archive::ReadIndex() {
     case TVP_XP3_INDEX_ENCODE_ZLIB:
     {
         uint64_t packed_size;
-        if (!stream.readu64(packed_size)) {
+        if (!stream->readu64(packed_size)) {
             return false;
         }
         uint64_t original_size;
-        if (!stream.readu64(original_size)) {
+        if (!stream->readu64(original_size)) {
             return false;
         }
-        int64_t current_pos = stream.tell();
+        int64_t current_pos = stream->tell();
         if (current_pos < 0) {
             return false;
         }
-        ReadStream* region = new ReadStreamRegion(&stream, current_pos, current_pos + packed_size);
+        ReadStream* region = new ReadStreamRegion(stream, current_pos, current_pos + packed_size);
         if (!decompress(region, index, original_size)) {
             return false;
         }
@@ -155,11 +155,11 @@ bool Xp3Archive::ReadFileEntry(MemReadStream& stream) {
 }
 
 Xp3File* Xp3Archive::OpenFile(size_t index) {
-    return new Xp3File(files[index], &stream);
+    return new Xp3File(files[index], stream);
 }
 
 Xp3File* Xp3Archive::OpenFile(FileEntry entry) {
-    return new Xp3File(std::move(entry), &stream);
+    return new Xp3File(std::move(entry), stream);
 }
 
 size_t Xp3File::read(uint8_t* buf, size_t size) {

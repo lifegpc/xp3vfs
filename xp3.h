@@ -101,12 +101,20 @@ private:
 
 class Xp3Archive {
 public:
-    Xp3Archive(const char* filename) : stream(filename) {}
+    Xp3Archive(const char* filename) : stream(new FileReadStream(filename)) {}
+    Xp3Archive(ReadStream* stream) : stream(stream) {}
+    ~Xp3Archive() {
+        if (stream) {
+            stream->close();
+            delete stream;
+            stream = nullptr;
+        }
+    }
     bool ReadIndex();
     std::vector<FileEntry> files;
     Xp3File* OpenFile(size_t index);
     Xp3File* OpenFile(FileEntry entry);
 private:
     bool ReadFileEntry(MemReadStream& stream);
-    FileReadStream stream;
+    ReadStream* stream;
 };
