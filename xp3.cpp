@@ -212,7 +212,7 @@ bool Xp3File::seek(int64_t offset, int whence) {
     if (new_pos > entry.original_size) {
         return false;
     }
-    if (cache) {
+    if (cache && new_pos < entry.original_size) {
         size_t old_seg_index = binary_search_pos(pos);
         size_t new_seg_index = binary_search_pos(new_pos);
         if (old_seg_index == new_seg_index) {
