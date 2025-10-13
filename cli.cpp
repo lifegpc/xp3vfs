@@ -2,6 +2,7 @@
 #include "xp3.h"
 #include <Windows.h>
 #include "fileop.h"
+#include <unordered_map>
 
 int main(int argc, char* argv[]) {
     SetConsoleOutputCP(CP_UTF8);
@@ -23,10 +24,16 @@ int main(int argc, char* argv[]) {
             printf("Failed to read index from %s\n", xp3file.c_str());
             return 1;
         }
+        std::unordered_map<uint64_t, uint64_t> seg_counter;
+        for (const auto& file : archive.files) {
+            for (const auto& seg : file.segments) {
+                seg_counter[seg.start]++;
+            }
+        }
         for (const auto& file : archive.files) {
             printf("%s (original size: %llu, packed size: %llu, segments: %zu)\n", file.filename.c_str(), file.original_size, file.packed_size, file.segments.size());
             for (const auto& seg : file.segments) {
-                printf("  Segment: start=%llu, original_size=%llu, packed_size=%llu, flag=0x%X\n", seg.start, seg.original_size, seg.packed_size, seg.flag);
+                printf("  Segment: start=%llu, original_size=%llu, packed_size=%llu, flag=0x%X, count=%llu\n", seg.start, seg.original_size, seg.packed_size, seg.flag, seg_counter[seg.start]);
             }
         }
     } else if (action == "extract") {
