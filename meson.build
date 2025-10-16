@@ -4,6 +4,7 @@ add_languages('c', 'cpp', required: true)
 cc = meson.get_compiler('c')
 deps = []
 conf = configuration_data()
+WIN32 = host_machine.system() in ['windows', 'cygwin']
 MSVC = cc.get_id() == 'msvc'
 
 if MSVC
@@ -11,12 +12,17 @@ if MSVC
     add_project_arguments('/utf-8', language: 'cpp')
 endif
 
+utils_default_options = []
+if not WIN32
+    utils_default_options += 'utils_iconv=enabled'
+endif
+
 if get_option('wrap')
     zlib = subproject('zlib', required: true)
     zlib_dep = zlib.get_variable('zlib_dep')
     deps += zlib_dep
     if get_option('zstd')
-        zstd = subproject('zstd', required: true)
+        zstd = subproject('zstd', required: true, default_options: ['bin_programs=false'])
         zstd_dep = zstd.get_variable('libzstd_dep')
         deps += zstd_dep
         conf.set('HAVE_ZSTD', 1)
@@ -35,7 +41,7 @@ endif
 
 utils_dep = dependency('utils', required: false)
 if not utils_dep.found()
-    utils = subproject('utils', required: true)
+    utils = subproject('utils', required: true, default_options: utils_default_options)
     utils_dep = utils.get_variable('utils_dep')
 endif
 deps += utils_dep

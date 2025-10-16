@@ -3,6 +3,7 @@
 #include <memory>
 #include "decompressor.h"
 #include "wchar_util.h"
+#include "encoding.h"
 
 bool Xp3Archive::ReadIndex() {
     uint8_t magic[11];
@@ -123,10 +124,17 @@ bool Xp3Archive::ReadFileEntry(MemReadStream& stream) {
             if (!chunk_stream.readall(name_data)) {
                 return false;
             }
+#if _WIN32
             std::wstring wname((wchar_t*)name_data.data(), name_length);
             if (!wchar_util::wstr_to_str(entry.filename, wname, 65001)) {
                 return false;
             }
+#else
+            std::string name((char*)name_data.data(), name_length * 2);
+            if (!encoding::convert(name, entry.filename, "UTF-16LE", "UTF-8")) {
+                return false;
+            }
+#endif
         } else if (!memcmp(chunk_type, CHUNK_ADLR, 4)) {
             if (!chunk_stream.readu32(entry.adler32)) {
                 return false;
