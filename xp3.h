@@ -20,6 +20,8 @@ inline const uint32_t TVP_XP3_SEGM_ENCODE_METHOD_MASK = 0x07;
 inline const uint32_t TVP_XP3_SEGM_ENCODE_RAW = 0x00;
 inline const uint32_t TVP_XP3_SEGM_ENCODE_ZLIB = 0x01;
 
+inline const uint64_t TVP_XP3_CURRENT_HEADER_VERSION = 0x17;
+
 struct Segment {
     uint32_t flag;
     uint64_t start; // start offset in the file
@@ -113,7 +115,11 @@ public:
     std::vector<FileEntry> files;
     Xp3File* OpenFile(size_t index);
     Xp3File* OpenFile(FileEntry entry);
+    uint32_t GetMinorVersion() const {
+        return minor_version;
+    }
 private:
     bool ReadFileEntry(MemReadStream& stream);
     ReadStream* stream;
+    uint32_t minor_version = 0;
 };

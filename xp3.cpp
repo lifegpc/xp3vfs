@@ -3,6 +3,7 @@
 #include <memory>
 #include "decompressor.h"
 #include "wchar_util.h"
+#include <inttypes.h>
 #include "encoding.h"
 
 bool Xp3Archive::ReadIndex() {
@@ -16,6 +17,31 @@ bool Xp3Archive::ReadIndex() {
     uint64_t index_offset;
     if (!stream->readu64(index_offset)) {
         return false;
+    }
+    if (index_offset == TVP_XP3_CURRENT_HEADER_VERSION) {
+        if (!stream->readu32(minor_version)) {
+            return false;
+        }
+        uint8_t sig;
+        if (!stream->readu8(sig)) {
+            return false;
+        }
+        if (sig != TVP_XP3_INDEX_CONTINUE) {
+            printf("Unsupported XP3 index format: %" PRIu8 " is not continue flag.\n", sig);
+            return false;
+        }
+        uint64_t index_offset_offset;
+        if (!stream->readu64(index_offset_offset)) {
+            return false;
+        }
+        if (index_offset_offset != 0) {
+            if (!stream->seek(index_offset_offset, SEEK_CUR)) {
+                return false;
+            }
+        }
+        if (!stream->readu64(index_offset)) {
+            return false;
+        }
     }
     if (!stream->seek(index_offset, SEEK_SET)) {
         return false;
@@ -75,8 +101,11 @@ bool Xp3Archive::ReadIndex() {
             return false;
         }
         if (memcmp(chunk_type, CHUNK_FILE, 4)) {
-            printf("Unknown chunk type: %.4s\n", chunk_type);
-            return false;
+            printf("Unknown chunk type: %.4s, chunk size: %" PRIu64 "\n", chunk_type, chunk_size);
+            if (!index_stream.skip(chunk_size)) {
+                return false;
+            }
+            continue;
         }
         std::vector<uint8_t> chunk_data(chunk_size);
         if (!index_stream.readall(chunk_data)) {
