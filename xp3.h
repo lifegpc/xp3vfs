@@ -77,6 +77,9 @@ public:
         }
         return true;
     }
+    uint64_t get_original_size() const {
+        return entry.original_size;
+    }
 private:
     size_t binary_search_pos(uint64_t offset) {
         size_t left = 0;
