@@ -66,7 +66,7 @@ if get_option('cli')
     exe_src = files([
         'cli.cpp',
     ])
-    cli_deps = [xp3vfs_dep, utils_dep]
+    cli_deps = [xp3vfs_dep, utils_dep, zlib_dep]
     executable('xp3vfs-cli',
         exe_src,
         dependencies: cli_deps,
