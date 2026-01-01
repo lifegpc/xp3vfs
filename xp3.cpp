@@ -192,14 +192,23 @@ bool Xp3Archive::ReadFileEntry(MemReadStream& stream) {
 }
 
 Xp3File* Xp3Archive::OpenFile(size_t index) {
-    return new Xp3File(files[index], this);
+    return new Xp3File(files[index], this, thread_safety ? mutex : nullptr);
 }
 
 Xp3File* Xp3Archive::OpenFile(FileEntry entry) {
-    return new Xp3File(std::move(entry), this);
+    return new Xp3File(std::move(entry), this, thread_safety ? mutex : nullptr);
 }
 
 size_t Xp3File::read(uint8_t* buf, size_t size) {
+    if (mutex) {
+        std::lock_guard<std::mutex> guard(*mutex);
+        return read_internal(buf, size);
+    } else {
+        return read_internal(buf, size);
+    }
+}
+
+size_t Xp3File::read_internal(uint8_t* buf, size_t size) {
     if (!buf) return 0;
     if (pos >= entry.original_size) return 0;
     if (cache) {
@@ -236,6 +245,15 @@ size_t Xp3File::read(uint8_t* buf, size_t size) {
 }
 
 bool Xp3File::seek(int64_t offset, int whence) {
+    if (mutex) {
+        std::lock_guard<std::mutex> guard(*mutex);
+        return seek_internal(offset, whence);
+    } else {
+        return seek_internal(offset, whence);
+    }
+}
+
+bool Xp3File::seek_internal(int64_t offset, int whence) {
     uint64_t new_pos = 0;
     if (whence == SEEK_SET) {
         new_pos = offset;

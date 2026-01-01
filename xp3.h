@@ -42,7 +42,7 @@ public:
 
 class Xp3File: public ReadStream {
 public:
-    Xp3File(FileEntry entry, ReadStream* stream): entry(entry), stream(stream), pos(0) {
+    Xp3File(FileEntry entry, ReadStream* stream, std::shared_ptr<std::mutex> lock): entry(entry), stream(stream), pos(0), mutex(lock) {
         uint64_t pos = 0;
         for (auto& seg : entry.segments) {
             seg_pos.push_back(pos);
@@ -65,7 +65,12 @@ public:
         return true;
     }
     virtual bool error() {
-        return stream->error() || (cache && cache->error());
+        if (mutex) {
+            std::lock_guard<std::mutex> guard(*mutex);
+            return error_internal();
+        } else {
+            return error_internal();
+        }
     }
     virtual bool eof() {
         return pos >= entry.original_size;
@@ -82,6 +87,11 @@ public:
         return entry.original_size;
     }
 private:
+    size_t read_internal(uint8_t* buf, size_t size);
+    bool seek_internal(int64_t offset, int whence);
+    bool error_internal() {
+        return stream->error() || (cache && cache->error());
+    }
     size_t binary_search_pos(uint64_t offset) {
         size_t left = 0;
         size_t right = seg_pos.size();
@@ -102,6 +112,7 @@ private:
     std::vector<uint64_t> seg_pos;
     uint64_t pos;
     ReadStream* cache = nullptr;
+    std::shared_ptr<std::mutex> mutex = nullptr;
 };
 
 class Xp3Archive: public ReadStream {
@@ -122,66 +133,10 @@ public:
     uint32_t GetMinorVersion() const {
         return minor_version;
     }
-    virtual size_t read(uint8_t* buf, size_t size) {
-        if (thread_safety) {
-            std::lock_guard<std::mutex> lock(mutex);
-            return stream->read(buf, size);
-        } else {
-            return stream->read(buf, size);
-        }
-    }
-    virtual bool seek(int64_t offset, int whence) {
-        if (thread_safety) {
-            std::lock_guard<std::mutex> lock(mutex);
-            return stream->seek(offset, whence);
-        } else {
-            return stream->seek(offset, whence);
-        }
-    }
-    virtual int64_t tell() {
-        if (thread_safety) {
-            std::lock_guard<std::mutex> lock(mutex);
-            return stream->tell();
-        } else {
-            return stream->tell();
-        }
-    }
-    virtual bool seekable() {
-        if (thread_safety) {
-            std::lock_guard<std::mutex> lock(mutex);
-            return stream->seekable();
-        } else {
-            return stream->seekable();
-        }
-    }
-    virtual bool eof() {
-        if (thread_safety) {
-            std::lock_guard<std::mutex> lock(mutex);
-            return stream->eof();
-        } else {
-            return stream->eof();
-        }
-    }
-    virtual bool error() {
-        if (thread_safety) {
-            std::lock_guard<std::mutex> lock(mutex);
-            return stream->error();
-        } else {
-            return stream->error();
-        }
-    }
-    virtual bool close() {
-        if (thread_safety) {
-            std::lock_guard<std::mutex> lock(mutex);
-            return stream->close();
-        } else {
-            return stream->close();
-        }
-    }
 private:
     bool ReadFileEntry(MemReadStream& stream);
     ReadStream* stream;
     uint32_t minor_version = 0;
     bool thread_safety;
-    std::mutex mutex;
+    std::shared_ptr<std::mutex> mutex;
 };
