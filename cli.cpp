@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
     std::string action = args[1];
     std::string xp3file = args[2];
     if (action == "ls") {
-        Xp3Archive archive(xp3file.c_str());
+        Xp3Archive archive(xp3file.c_str(), false);
         if (!archive.ReadIndex()) {
             printf("Failed to read index from %s\n", xp3file.c_str());
             return 1;
@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
     } else if (action == "extract") {
         const size_t chunk_size = 8192;
         uint8_t buffer[chunk_size];
-        Xp3Archive archive(xp3file.c_str());
+        Xp3Archive archive(xp3file.c_str(), false);
         if (!archive.ReadIndex()) {
             printf("Failed to read index from %s\n", xp3file.c_str());
             return 1;
@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
         const size_t chunk_size = 8192;
         auto start_time = time_util::time_ns64();
         uint8_t buffer[chunk_size];
-        Xp3Archive archive(xp3file.c_str());
+        Xp3Archive archive(xp3file.c_str(), false);
         if (!archive.ReadIndex()) {
             printf("Failed to read index from %s\n", xp3file.c_str());
             return 1;
@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
         printf("Extracted %" PRIu64 " bytes in %.6f seconds (%.2f MB/s)\n", total_size, elapsed_sec, speed);
         return 0;
     } else if (action == "verify") {
-        Xp3Archive archive(xp3file.c_str());
+        Xp3Archive archive(xp3file.c_str(), false);
         if (!archive.ReadIndex()) {
             printf("Failed to read index from %s\n", xp3file.c_str());
             return 1;

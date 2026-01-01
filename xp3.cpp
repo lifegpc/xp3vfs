@@ -192,11 +192,11 @@ bool Xp3Archive::ReadFileEntry(MemReadStream& stream) {
 }
 
 Xp3File* Xp3Archive::OpenFile(size_t index) {
-    return new Xp3File(files[index], stream);
+    return new Xp3File(files[index], this);
 }
 
 Xp3File* Xp3Archive::OpenFile(FileEntry entry) {
-    return new Xp3File(std::move(entry), stream);
+    return new Xp3File(std::move(entry), this);
 }
 
 size_t Xp3File::read(uint8_t* buf, size_t size) {

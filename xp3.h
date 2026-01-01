@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "stream.h"
+#include <mutex>
 
 inline const char* XP3_MAGIC = "XP3\r\n \n\x1a\x8b\x67\x01";
 
@@ -103,10 +104,10 @@ private:
     ReadStream* cache = nullptr;
 };
 
-class Xp3Archive {
+class Xp3Archive: public ReadStream {
 public:
-    Xp3Archive(const char* filename) : stream(new FileReadStream(filename)) {}
-    Xp3Archive(ReadStream* stream) : stream(stream) {}
+    Xp3Archive(const char* filename, bool thread_safety = true) : stream(new FileReadStream(filename)), thread_safety(thread_safety) {}
+    Xp3Archive(ReadStream* stream, bool thread_safety = true) : stream(stream), thread_safety(thread_safety) {}
     ~Xp3Archive() {
         if (stream) {
             stream->close();
@@ -121,8 +122,66 @@ public:
     uint32_t GetMinorVersion() const {
         return minor_version;
     }
+    virtual size_t read(uint8_t* buf, size_t size) {
+        if (thread_safety) {
+            std::lock_guard<std::mutex> lock(mutex);
+            return stream->read(buf, size);
+        } else {
+            return stream->read(buf, size);
+        }
+    }
+    virtual bool seek(int64_t offset, int whence) {
+        if (thread_safety) {
+            std::lock_guard<std::mutex> lock(mutex);
+            return stream->seek(offset, whence);
+        } else {
+            return stream->seek(offset, whence);
+        }
+    }
+    virtual int64_t tell() {
+        if (thread_safety) {
+            std::lock_guard<std::mutex> lock(mutex);
+            return stream->tell();
+        } else {
+            return stream->tell();
+        }
+    }
+    virtual bool seekable() {
+        if (thread_safety) {
+            std::lock_guard<std::mutex> lock(mutex);
+            return stream->seekable();
+        } else {
+            return stream->seekable();
+        }
+    }
+    virtual bool eof() {
+        if (thread_safety) {
+            std::lock_guard<std::mutex> lock(mutex);
+            return stream->eof();
+        } else {
+            return stream->eof();
+        }
+    }
+    virtual bool error() {
+        if (thread_safety) {
+            std::lock_guard<std::mutex> lock(mutex);
+            return stream->error();
+        } else {
+            return stream->error();
+        }
+    }
+    virtual bool close() {
+        if (thread_safety) {
+            std::lock_guard<std::mutex> lock(mutex);
+            return stream->close();
+        } else {
+            return stream->close();
+        }
+    }
 private:
     bool ReadFileEntry(MemReadStream& stream);
     ReadStream* stream;
     uint32_t minor_version = 0;
+    bool thread_safety;
+    std::mutex mutex;
 };
