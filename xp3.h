@@ -59,7 +59,12 @@ public:
     virtual size_t read(uint8_t* buf, size_t size);
     virtual bool seek(int64_t offset, int whence);
     virtual int64_t tell() {
-        return pos;
+        if (mutex) {
+            std::lock_guard<std::mutex> guard(*mutex);
+            return (int64_t)pos;
+        } else {
+            return (int64_t)pos;
+        }
     }
     virtual bool seekable() {
         return true;
@@ -73,15 +78,20 @@ public:
         }
     }
     virtual bool eof() {
-        return pos >= entry.original_size;
+        if (mutex) {
+            std::lock_guard<std::mutex> guard(*mutex);
+            return eof_internal();
+        } else {
+            return eof_internal();
+        }
     }
     virtual bool close() {
-        if (cache) {
-            cache->close();
-            delete cache;
-            cache = nullptr;
+        if (mutex) {
+            std::lock_guard<std::mutex> guard(*mutex);
+            return close_internal();
+        } else {
+            return close_internal();
         }
-        return true;
     }
     uint64_t get_original_size() const {
         return entry.original_size;
@@ -91,6 +101,17 @@ private:
     bool seek_internal(int64_t offset, int whence);
     bool error_internal() {
         return stream->error() || (cache && cache->error());
+    }
+    bool eof_internal() {
+        return pos >= entry.original_size;
+    }
+    bool close_internal() {
+        if (cache) {
+            cache->close();
+            delete cache;
+            cache = nullptr;
+        }
+        return true;
     }
     size_t binary_search_pos(uint64_t offset) {
         size_t left = 0;
