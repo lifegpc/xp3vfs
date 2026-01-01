@@ -1,7 +1,6 @@
 #pragma once
 #include <stdint.h>
 #include "stream.h"
-#include <mutex>
 
 inline const char* XP3_MAGIC = "XP3\r\n \n\x1a\x8b\x67\x01";
 
@@ -42,7 +41,7 @@ public:
 
 class Xp3File: public ReadStream {
 public:
-    Xp3File(FileEntry entry, ReadStream* stream, bool thread_safety): entry(entry), stream(stream), pos(0), thread_safety(thread_safety) {
+    Xp3File(FileEntry entry, ReadStream* stream): entry(entry), stream(stream), pos(0) {
         uint64_t pos = 0;
         for (auto& seg : entry.segments) {
             seg_pos.push_back(pos);
@@ -65,12 +64,7 @@ public:
         return true;
     }
     virtual bool error() {
-        if (thread_safety) {
-            std::lock_guard<std::mutex> lock(mtx);
-            return error_internal();
-        } else {
-            return error_internal();
-        }
+        return stream->error() || (cache && cache->error());
     }
     virtual bool eof() {
         return pos >= entry.original_size;
@@ -87,11 +81,6 @@ public:
         return entry.original_size;
     }
 private:
-    size_t read_internal(uint8_t* buf, size_t size);
-    bool seek_internal(int64_t offset, int whence);
-    bool error_internal() {
-        return stream->error() || (cache && cache->error());
-    }
     size_t binary_search_pos(uint64_t offset) {
         size_t left = 0;
         size_t right = seg_pos.size();
@@ -112,8 +101,6 @@ private:
     std::vector<uint64_t> seg_pos;
     uint64_t pos;
     ReadStream* cache = nullptr;
-    bool thread_safety;
-    std::mutex mtx;
 };
 
 class Xp3Archive {
@@ -129,8 +116,8 @@ public:
     }
     bool ReadIndex();
     std::vector<FileEntry> files;
-    Xp3File* OpenFile(size_t index, bool thread_safety = true);
-    Xp3File* OpenFile(FileEntry entry, bool thread_safety = true);
+    Xp3File* OpenFile(size_t index);
+    Xp3File* OpenFile(FileEntry entry);
     uint32_t GetMinorVersion() const {
         return minor_version;
     }

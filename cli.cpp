@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
     }
 #endif
     if (args.size() < 3) {
-        printf("Usage: %s extract <xp3 file> [out] Extract files\n", args[0].c_str());
+        printf("Usage: %s extract <xp3 file> Extract files\n", args[0].c_str());
         printf("       %s ls <xp3 file> List files in the archive\n", args[0].c_str());
         printf("       %s speedtest <xp3 file> Test extraction speed (no files will be written)\n", args[0].c_str());
         printf("       %s verify <xp3 file> Verify integrity of files in the archive\n", args[0].c_str());
@@ -60,18 +60,14 @@ int main(int argc, char* argv[]) {
             printf("Failed to read index from %s\n", xp3file.c_str());
             return 1;
         }
-        std::string outdir = fileop::filename(xp3file);
-        if (args.size() >= 4) {
-            outdir = args[3];
-        }
         for (const auto& file: archive.files) {
             printf("Extracting %s ... ", file.filename.c_str());
-            Xp3File* inf = archive.OpenFile(file, false);
+            Xp3File* inf = archive.OpenFile(file);
             if (!inf) {
                 printf("Failed to open file %s\n", file.filename.c_str());
                 continue;
             }
-            std::string filename = fileop::join(outdir, file.filename);
+            std::string filename = fileop::join(fileop::filename(xp3file), file.filename);
             fileop::mkdir_for_file(filename, 0);
             FILE* outfp = fileop::fopen(filename, "wb");
             if (!outfp) {
@@ -109,7 +105,7 @@ int main(int argc, char* argv[]) {
         }
         uint64_t total_size = 0;
         for (const auto& file: archive.files) {
-            Xp3File* inf = archive.OpenFile(file, false);
+            Xp3File* inf = archive.OpenFile(file);
             if (!inf) {
                 printf("Failed to open file %s\n", file.filename.c_str());
                 continue;
@@ -154,7 +150,7 @@ int main(int argc, char* argv[]) {
                 continue;
             }
             printf("Verifying %s ... ", f.filename.c_str());
-            Xp3File* inf = archive.OpenFile(f, false);
+            Xp3File* inf = archive.OpenFile(f);
             if (!inf) {
                 printf("Failed to open file %s\n", f.filename.c_str());
                 continue;
