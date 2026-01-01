@@ -192,11 +192,11 @@ bool Xp3Archive::ReadFileEntry(MemReadStream& stream) {
 }
 
 Xp3File* Xp3Archive::OpenFile(size_t index) {
-    return new Xp3File(files[index], this, thread_safety ? mutex : nullptr);
+    return new Xp3File(files[index], stream, thread_safety ? mutex : nullptr);
 }
 
 Xp3File* Xp3Archive::OpenFile(FileEntry entry) {
-    return new Xp3File(std::move(entry), this, thread_safety ? mutex : nullptr);
+    return new Xp3File(std::move(entry), stream, thread_safety ? mutex : nullptr);
 }
 
 size_t Xp3File::read(uint8_t* buf, size_t size) {
