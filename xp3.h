@@ -117,8 +117,8 @@ private:
 
 class Xp3Archive {
 public:
-    Xp3Archive(const char* filename, bool thread_safety = true) : stream(new FileReadStream(filename)), thread_safety(thread_safety) {}
-    Xp3Archive(ReadStream* stream, bool thread_safety = true) : stream(stream), thread_safety(thread_safety) {}
+    Xp3Archive(const char* filename, bool thread_safety = true) : stream(new FileReadStream(filename)), thread_safety(thread_safety), mutex(thread_safety ? std::make_shared<std::mutex>() : nullptr) {}
+    Xp3Archive(ReadStream* stream, bool thread_safety = true) : stream(stream), thread_safety(thread_safety), mutex(thread_safety ? std::make_shared<std::mutex>() : nullptr) {}
     ~Xp3Archive() {
         if (stream) {
             stream->close();
