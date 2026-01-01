@@ -50,10 +50,19 @@ public:
         }
     }
     ~Xp3File() {
-        if (cache) {
-            cache->close();
-            delete cache;
-            cache = nullptr;
+        if (mutex) {
+            std::lock_guard<std::mutex> guard(*mutex);
+            if (cache) {
+                cache->close();
+                delete cache;
+                cache = nullptr;
+            }
+        } else {
+            if (cache) {
+                cache->close();
+                delete cache;
+                cache = nullptr;
+            }
         }
     }
     virtual size_t read(uint8_t* buf, size_t size);
